@@ -1,14 +1,10 @@
-#include "llvm/ADT/Statistic.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/Operator.h"
 #include "llvm/Pass.h"
-#include "llvm/Support/raw_ostream.h"
 
-#include <llvm/InterfaceStub/IFSStub.h>
 #include <unordered_set>
 using namespace llvm;
 
@@ -44,23 +40,18 @@ struct DSE : public FunctionPass {
                 }
                 if (auto Store = dyn_cast<StoreInst>(&I)) {
                     Value *Operand = Store->getOperand(1);
-                    // posto idemo unazad, kada prvi put naidjemo na store u promenljivu,
-                    // to je zapravo poslednji store u tu promenljivu u toku programa
-                    // taj store ne brisemo, i u tom slucaju kada posmatramo ovu vrednost bice false,
-                    // jer je nema u mapi pa ce se pri prvom pozivu init na false
-                    // if (VariableDead[Operand]) {
-                    //     InstructionsToRemove.push_back(&I);
-                    // }
                     if (DeadVariables.find(Operand) != DeadVariables.end()) {
                         InstructionsToRemove.push_back(&I);
                     }
+                    // ovde imamo bas promenljivu, ne gledamo iz mape
                     DeadVariables.insert(Operand);
                 } else {
                     size_t numOperands = I.getNumOperands();
                     for (size_t i = 0; i < numOperands; i++) {
                         Value *Operand = I.getOperand(i);
                         if (VariablesMap.find(Operand) != VariablesMap.end()) {
-                            DeadVariables.erase(Operand);
+                            // cuvamo bas promenljivu
+                            DeadVariables.erase(VariablesMap[Operand]);
                         }
                     }
                 }
